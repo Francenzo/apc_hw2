@@ -39,12 +39,33 @@ int main( int argc, char **argv )
     //  simulate a number of time steps
     //
     double simulation_time = read_timer( );
+
+    // bin [x-blocks] [y-blocks] [density]
+
+    // Size of one side of a 2D bin square
+    int bin_count = get_bin_count();
+    // bin_t * binArr = make_bin(n);
+    make_bin(n);
+    // int bin[(int)(size/cutoff)][(int)(size/cutoff)][(int)(n/size)];
+
+    // Make bins and set particales into bins
+    int blah = 0;
+    for( blah = 0; blah < n; blah++ )
+    {
+        set_bin(particles[blah]);
+    }
+
+#ifdef DEBUG_LA
+    printf("blah = %i\r\n", blah);
+    print_bins();
+#endif
 	
     for( int step = 0; step < NSTEPS; step++ )
     {
-	navg = 0;
+	    navg = 0;
         davg = 0.0;
-	dmin = 1.0;
+	    dmin = 1.0;
+
         //
         //  compute forces
         //

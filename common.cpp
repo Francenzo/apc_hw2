@@ -9,6 +9,8 @@
 #include "common.h"
 
 double size;
+int block_size;
+static bin_t * binArr;
 
 //
 //  tuned constants
@@ -42,6 +44,7 @@ double read_timer( )
 void set_size( int n )
 {
     size = sqrt( density * n );
+    block_size = size/cutoff;
 }
 
 //
@@ -80,6 +83,82 @@ void init_particles( int n, particle_t *p )
         p[i].vy = drand48()*2-1;
     }
     free( shuffle );
+}
+
+//
+// Allocate memory for bin
+//
+int get_bin_count() 
+{
+    return (block_size);
+}
+
+//
+// Allocate memory for bin
+//
+void make_bin(int n) 
+{
+    int b_square = block_size*block_size;
+
+    // 2D square array of bins
+    binArr = (bin_t *) malloc(b_square * sizeof(bin_t));
+    for (int i = 0; i < b_square; i++)
+    {
+        // Assume even distribution of particles
+        binArr[i].count = 0;
+        binArr[i].size = b_square/n;
+        binArr[i].arr = (particle_t*) malloc(b_square/n  * sizeof(particle_t*));
+        // binArr[i].arr = (particle_t *) realloc(binArr[i].arr, sizeof(particle_t *) * binArr[i].size * 2);
+
+
+        // binArr[i].size *= 2;
+        // binArr[i].arr = (particle_t *) realloc(binArr[i].arr, sizeof(particle_t *) * binArr[i].size);
+    }
+
+    // return binArr;
+}
+
+
+//
+// Puts particles into their bins
+//
+void set_bin(particle_t & particle) 
+{
+    int binNum = (int)(particle.x/size) + (int)(particle.y/size*block_size);
+    bin_t * bin = &binArr[binNum];
+    particle_t * ptr = bin->arr;
+    // printf("binNum = %i\r\n", binNum);
+
+    // Reallocate if not big enough (kind of like a vector)
+    if (bin->size == (bin->count) )
+    {
+        // printf("size = % i, count = %i\r\n", bin->size, bin->count);
+        bin->size *= 2;
+
+        // printf("size = % i, count = %i\r\n", bin->size, bin->count);
+        particle_t * ptr = bin->arr;
+        particle_t * new_ptr = (particle_t *) malloc( sizeof(particle_t *) * bin->size);
+        memcpy(new_ptr, ptr, bin->size/2);
+
+        // bin->arr = (particle_t *) realloc(binArr[binNum].arr, sizeof(particle_t *) * bin->size);
+
+        bin->arr = new_ptr;
+        // free(ptr);
+    }
+
+    // printf("size = % i, count = %i\r\n", bin->size, bin->count);
+
+
+    ptr[bin->count] = particle;
+    (bin->count)++;
+}
+
+void print_bins()
+{
+    for( int i = 0; i < block_size; i++ )
+    {
+        printf("bin.size = %i, bin[%i].count = %i\r\n", binArr[i].size, i, binArr[i].count);
+    }
 }
 
 //

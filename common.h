@@ -24,9 +24,27 @@ typedef struct
 } particle_t;
 
 //
+//  Structure for a bin block
+//
+typedef struct
+{
+  int size;
+  int count;
+  particle_t * arr;
+} bin_t;
+
+//
 //  timing routines
 //
 double read_timer( );
+
+//
+//  bin block routines
+//
+int get_bin_count();
+void make_bin(int n);
+void set_bin(particle_t & particle);
+void print_bins();
 
 //
 //  simulation routines
