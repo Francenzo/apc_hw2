@@ -15,6 +15,7 @@ const int SAVEFREQ = 10;
 //
 typedef struct 
 {
+  int binNum;
   double x;
   double y;
   double vx;
@@ -44,6 +45,8 @@ double read_timer( );
 int get_bin_count();
 void make_bin(int n);
 void set_bin(particle_t & particle);
+void move_bin(particle_t & particle);
+void apply_force_bin(int binNum, double *dmin, double *davg, int *navg);
 void print_bins();
 
 //

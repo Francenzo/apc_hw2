@@ -6,8 +6,8 @@
 CC = icpc
 MPCC = mpicxx
 OPENMP = -qopenmp
-CFLAGS = -O3
-LIBS = -lirc
+CFLAGS = -O3 -Wall
+LIBS =
 
 
 TARGETS = serial pthreads openmp mpi autograder

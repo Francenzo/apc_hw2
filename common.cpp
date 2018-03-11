@@ -9,7 +9,7 @@
 #include "common.h"
 
 double size;
-int block_size;
+int block_row_count;
 static bin_t * binArr;
 
 //
@@ -44,7 +44,7 @@ double read_timer( )
 void set_size( int n )
 {
     size = sqrt( density * n );
-    block_size = size/cutoff;
+    block_row_count = size/cutoff;
 }
 
 //
@@ -90,7 +90,7 @@ void init_particles( int n, particle_t *p )
 //
 int get_bin_count() 
 {
-    return (block_size);
+    return (block_row_count * block_row_count);
 }
 
 //
@@ -98,7 +98,7 @@ int get_bin_count()
 //
 void make_bin(int n) 
 {
-    int b_square = block_size*block_size;
+    int b_square = block_row_count*block_row_count;
 
     // 2D square array of bins
     binArr = (bin_t *) malloc(b_square * sizeof(bin_t));
@@ -107,7 +107,10 @@ void make_bin(int n)
         // Assume even distribution of particles
         binArr[i].count = 0;
         binArr[i].size = b_square/n;
-        binArr[i].arr = (particle_t*) malloc(b_square/n  * sizeof(particle_t*));
+
+        binArr[i].arr =  new particle_t[b_square/n];
+        // binArr[i].arr = (particle_t*) malloc(b_square/n  * sizeof(particle_t*));
+
         // binArr[i].arr = (particle_t *) realloc(binArr[i].arr, sizeof(particle_t *) * binArr[i].size * 2);
 
 
@@ -124,9 +127,10 @@ void make_bin(int n)
 //
 void set_bin(particle_t & particle) 
 {
-    int binNum = (int)(particle.x/size) + (int)(particle.y/size*block_size);
+    int binNum = (int)(particle.x/size) + (int)(particle.y/size*block_row_count);
+    particle.binNum = binNum;
     bin_t * bin = &binArr[binNum];
-    particle_t * ptr = bin->arr;
+    particle_t * ptr = (bin->arr);
     // printf("binNum = %i\r\n", binNum);
 
     // Reallocate if not big enough (kind of like a vector)
@@ -136,13 +140,14 @@ void set_bin(particle_t & particle)
         bin->size *= 2;
 
         // printf("size = % i, count = %i\r\n", bin->size, bin->count);
-        particle_t * ptr = bin->arr;
-        particle_t * new_ptr = (particle_t *) malloc( sizeof(particle_t *) * bin->size);
+        // particle_t * new_ptr = (particle_t *) malloc( sizeof(particle_t *) * bin->size);
+        particle_t * new_ptr = new particle_t[bin->size];
         memcpy(new_ptr, ptr, bin->size/2);
 
         // bin->arr = (particle_t *) realloc(binArr[binNum].arr, sizeof(particle_t *) * bin->size);
 
-        bin->arr = new_ptr;
+        // delete ptr;
+        (bin->arr) = new_ptr;
         // free(ptr);
     }
 
@@ -153,9 +158,70 @@ void set_bin(particle_t & particle)
     (bin->count)++;
 }
 
+//
+// Move particle into new bin
+//
+void move_bin(particle_t & particle) 
+{
+    bin_t & bin = binArr[particle.binNum];
+    // printf("binNum = %i\r\n", binNum);
+
+    // Remove particle from old bin
+    int iCount = 0;
+    for (iCount = 0 ; iCount < bin.count; iCount ++)
+    {
+        if (&particle != &bin.arr[iCount])
+        {
+            break;
+        }
+    }
+
+    if (iCount == bin.count) 
+    {
+        printf("Error: Could not find particle in bin.\r\n");
+        exit(-1);
+    } else {
+        bin.arr[iCount] = bin.arr[bin.count];
+        bin.count--;
+    }
+
+    set_bin(particle);
+}
+
+void apply_force_bin(int binNum, double *dmin, double *davg, int *navg)
+{
+    bin_t & bin = binArr[binNum];
+    int binsToCheck[] = {   binNum - block_row_count - 1,
+                            binNum - block_row_count,
+                            binNum - block_row_count + 1,
+                            binNum - 1,
+                            binNum,
+                            binNum + 1,
+                            binNum + block_row_count - 1,
+                            binNum + block_row_count,
+                            binNum + block_row_count + 1
+                        };
+
+    for (int i = 0; i < 9; i++)
+    {
+        int compareBinNum = binsToCheck[i];
+        if (compareBinNum >= 0 && compareBinNum < block_row_count*block_row_count)
+        {
+            bin_t & compare_bin = binArr[compareBinNum];
+            for (int j = 0; j < bin.count; j++)
+            {
+                for (int k = 0; k < compare_bin.count; k++)
+                {
+                    apply_force(bin.arr[j], compare_bin.arr[k],dmin,davg,navg);
+                }
+            }
+        }
+    }
+}
+
 void print_bins()
 {
-    for( int i = 0; i < block_size; i++ )
+    for( int i = 0; i < block_row_count; i++ )
     {
         printf("bin.size = %i, bin[%i].count = %i\r\n", binArr[i].size, i, binArr[i].count);
     }
@@ -166,7 +232,7 @@ void print_bins()
 //
 void apply_force( particle_t &particle, particle_t &neighbor , double *dmin, double *davg, int *navg)
 {
-
+    particle.ax = particle.ay = 0;
     double dx = neighbor.x - particle.x;
     double dy = neighbor.y - particle.y;
     double r2 = dx * dx + dy * dy;
@@ -219,6 +285,13 @@ void move( particle_t &p )
     {
         p.y  = p.y < 0 ? -p.y : 2*size-p.y;
         p.vy = -p.vy;
+    }
+
+    int binNum = (int)(p.x/size) + (int)(p.y/size*block_row_count);
+    if (p.binNum != binNum)
+    {
+        // printf("wtf binnum = %i, p.binnum = %i\r\n", binNum, p.binNum);
+        move_bin(p);
     }
 }
 

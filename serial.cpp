@@ -55,6 +55,7 @@ int main( int argc, char **argv )
         set_bin(particles[blah]);
     }
 
+// #define DEBUG_LA
 #ifdef DEBUG_LA
     printf("blah = %i\r\n", blah);
     print_bins();
@@ -69,12 +70,18 @@ int main( int argc, char **argv )
         //
         //  compute forces
         //
+        for (int i=0; i < bin_count; i++)
+        {
+            apply_force_bin(i,&dmin,&davg,&navg);
+        }
+        /*
         for( int i = 0; i < n; i++ )
         {
             particles[i].ax = particles[i].ay = 0;
             for (int j = 0; j < n; j++ )
 				apply_force( particles[i], particles[j],&dmin,&davg,&navg);
         }
+        */
  
         //
         //  move particles
