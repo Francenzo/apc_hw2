@@ -148,13 +148,13 @@ void set_bin(particle_t & particle)
 
         // delete ptr;
         (bin->arr) = new_ptr;
+        new_ptr[bin->count] = particle;
+        delete ptr;
         // free(ptr);
+    } else {
+        ptr[bin->count] = particle;
     }
 
-    // printf("size = % i, count = %i\r\n", bin->size, bin->count);
-
-
-    ptr[bin->count] = particle;
     (bin->count)++;
 }
 
@@ -163,6 +163,7 @@ void set_bin(particle_t & particle)
 //
 void move_bin(particle_t & particle) 
 {
+    printf("Moving particle\r\n");
     bin_t & bin = binArr[particle.binNum];
     // printf("binNum = %i\r\n", binNum);
 
@@ -170,8 +171,9 @@ void move_bin(particle_t & particle)
     int iCount = 0;
     for (iCount = 0 ; iCount < bin.count; iCount ++)
     {
-        if (&particle != &bin.arr[iCount])
+        if (&particle == &bin.arr[iCount])
         {
+            printf("Particle Found. iCount = %i.\r\n", iCount);
             break;
         }
     }
@@ -179,6 +181,7 @@ void move_bin(particle_t & particle)
     if (iCount == bin.count) 
     {
         printf("Error: Could not find particle in bin.\r\n");
+        printf("BinNum = %i, bin count = %i, iCount =%i\r\n", particle.binNum, bin.count, iCount);
         exit(-1);
     } else {
         bin.arr[iCount] = bin.arr[bin.count];
@@ -201,6 +204,24 @@ void apply_force_bin(int binNum, double *dmin, double *davg, int *navg)
                             binNum + block_row_count,
                             binNum + block_row_count + 1
                         };
+
+    // printf("block_row_count = %i, compareBinNum = [%i,%i,%i,%i,%i,%i,%i,%i,%i\r\n",
+    //                                                         block_row_count,
+    //                                                         binsToCheck[0],
+    //                                                         binsToCheck[1],
+    //                                                         binsToCheck[2],
+    //                                                         binsToCheck[3],
+    //                                                         binsToCheck[4],
+    //                                                         binsToCheck[5],
+    //                                                         binsToCheck[6],
+    //                                                         binsToCheck[7],
+    //                                                         binsToCheck[8]
+    //                                                         );
+
+    for (int i = 0 ; i < bin.count; i++)
+    {
+        bin.arr[i].ax = bin.arr[i].ay = 0;
+    }
 
     for (int i = 0; i < 9; i++)
     {
@@ -232,7 +253,6 @@ void print_bins()
 //
 void apply_force( particle_t &particle, particle_t &neighbor , double *dmin, double *davg, int *navg)
 {
-    particle.ax = particle.ay = 0;
     double dx = neighbor.x - particle.x;
     double dy = neighbor.y - particle.y;
     double r2 = dx * dx + dy * dy;

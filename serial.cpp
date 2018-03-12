@@ -55,7 +55,11 @@ int main( int argc, char **argv )
         set_bin(particles[blah]);
     }
 
-// #define DEBUG_LA
+#define DEBUG_LA
+#ifdef DEBUG_LA
+    char *outname = (char*) malloc(32 * sizeof(char));
+#endif
+
 #ifdef DEBUG_LA
     printf("blah = %i\r\n", blah);
     print_bins();
@@ -105,6 +109,13 @@ int main( int argc, char **argv )
           //
           if( fsave && (step%SAVEFREQ) == 0 )
               save( fsave, n, particles );
+
+#ifdef DEBUG_LA
+          sprintf( outname, "out/fout-%05d.txt", step );
+          FILE *fout = fopen( outname, "w" );
+          save( fout, n, particles);
+          fclose( fout );
+#endif
         }
     }
     simulation_time = read_timer( ) - simulation_time;
