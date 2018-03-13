@@ -4,6 +4,8 @@
 inline int min( int a, int b ) { return a < b ? a : b; }
 inline int max( int a, int b ) { return a > b ? a : b; }
 
+#include <vector>
+
 //
 //  saving parameters
 //
@@ -31,7 +33,7 @@ typedef struct
 {
   int size;
   int count;
-  particle_t * arr;
+  std::vector<particle_t *> vec;
 } bin_t;
 
 //

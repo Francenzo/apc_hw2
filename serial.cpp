@@ -91,7 +91,13 @@ int main( int argc, char **argv )
         //  move particles
         //
         for( int i = 0; i < n; i++ ) 
+        {
+            if (i == 2)
+            {
+                printf("particle 2 p.ax = %f, p.ay = %f\r\n", particles[i].ax, particles[i].ay);
+            }
             move( particles[i] );		
+        }
 
         if( find_option( argc, argv, "-no" ) == -1 )
         {
