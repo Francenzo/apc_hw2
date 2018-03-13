@@ -47,7 +47,9 @@ double read_timer( )
 void set_size( int n )
 {
     size = sqrt( density * n );
-    block_row_count = size/cutoff;
+    block_row_count = (size/cutoff);
+    // block_row_count = 1;
+    printf("size = %f, b = %i\r\n", size, block_row_count);
 }
 
 //
@@ -93,7 +95,7 @@ void init_particles( int n, particle_t *p )
 //
 int get_bin_count() 
 {
-    return (block_row_count * block_row_count);
+    return (block_row_count*block_row_count);
 }
 
 //
@@ -111,7 +113,10 @@ void make_bin(int n)
 //
 void set_bin(particle_t & particle) 
 {
-    int binNum = (int)(particle.x/size) + (int)(particle.y/size*block_row_count);
+    int frac_x = particle.x/size;
+    int frac_y = particle.y/size;
+    int binNum = (frac_x * block_row_count ) + (frac_y * block_row_count * block_row_count );
+    // printf("binNum = %i, max = %i, fx = %f, fy = %f, cx = %i, cy = %i\r\n", binNum, block_row_count*block_row_count, particle.x/size, particle.y/size, (int)( (particle.x/size) * block_row_count ), (int) ( (particle.y/size) * block_row_count *block_row_count ));
     particle.binNum = binNum;
     binVec.at(binNum).push_back(&particle);
 }
@@ -141,42 +146,6 @@ void move_bin(particle_t & particle)
 
 }
 
-// void apply_force_bin(int binNum, double *dmin, double *davg, int *navg)
-// {
-//     vector<particle_t*> bin = binVec.at(binNum);
-//     int binsToCheck[] = {   binNum - block_row_count - 1,
-//                             binNum - block_row_count,
-//                             binNum - block_row_count + 1,
-//                             binNum - 1,
-//                             binNum,
-//                             binNum + 1,
-//                             binNum + block_row_count - 1,
-//                             binNum + block_row_count,
-//                             binNum + block_row_count + 1
-//                         };
-
-//     for (int i = 0 ; i < bin.size(); i++)
-//     {
-//         bin.at(i)->ax = bin.at(i)->ay = 0;
-//     }
-
-//     for (int i = 0; i < 9; i++)
-//     {
-//         int compareBinNum = binsToCheck[i];
-//         if (compareBinNum >= 0 && compareBinNum < block_row_count*block_row_count)
-//         {
-//             vector<particle_t*> compare_bin = binVec.at(compareBinNum);
-//             for (int j = 0; j < bin.size(); j++)
-//             {
-//                 for (int k = 0; k < compare_bin.size(); k++)
-//                 {
-//                     apply_force(*bin.at(j), *compare_bin.at(k),dmin,davg,navg);
-//                 }
-//             }
-//         }
-//     }
-// }
-
 void apply_force_bin(int binNum, double *dmin, double *davg, int *navg)
 {
     vector<particle_t*> bin = binVec.at(binNum);
@@ -196,32 +165,63 @@ void apply_force_bin(int binNum, double *dmin, double *davg, int *navg)
         bin.at(i)->ax = bin.at(i)->ay = 0;
     }
 
-    for (int i = 0; i < bin.size(); i++)
+    for (int i = 0; i < 9; i++)
     {
-        bin.at(i)->ax = bin.at(i)->ay = 0;
-
-        for (int j = 0; j < 9; j++)
+        int compareBinNum = binsToCheck[i];
+        if (compareBinNum >= 0 && compareBinNum < block_row_count*block_row_count)
         {
-            int compareBinNum = binsToCheck[i];
-
-            if (compareBinNum >= 0 && compareBinNum < block_row_count*block_row_count)
+            vector<particle_t*> compare_bin = binVec.at(compareBinNum);
+            for (int j = 0; j < bin.size(); j++)
             {
-                vector<particle_t*> compare_bin = binVec.at(compareBinNum);
                 for (int k = 0; k < compare_bin.size(); k++)
                 {
-                    apply_force(*bin.at(i), *compare_bin.at(k),dmin,davg,navg);
+                    apply_force(*bin.at(j), *compare_bin.at(k),dmin,davg,navg);
                 }
             }
         }
     }
 }
 
+// void apply_force_bin(int binNum, double *dmin, double *davg, int *navg)
+// {
+//     vector<particle_t*> bin = binVec.at(binNum);
+//     int binsToCheck[] = {   binNum - block_row_count - 1,
+//                             binNum - block_row_count,
+//                             binNum - block_row_count + 1,
+//                             binNum - 1,
+//                             binNum,
+//                             binNum + 1,
+//                             binNum + block_row_count - 1,
+//                             binNum + block_row_count,
+//                             binNum + block_row_count + 1
+//                         };
+
+//     for (int i = 0; i < bin.size(); i++)
+//     {
+//         bin.at(i)->ax = bin.at(i)->ay = 0;
+
+//         for (int j = 0; j < 9; j++)
+//         {
+//             int compareBinNum = binsToCheck[i];
+
+//             if (compareBinNum >= 0 && compareBinNum < block_row_count*block_row_count)
+//             {
+//                 vector<particle_t*> compare_bin = binVec.at(compareBinNum);
+//                 for (int k = 0; k < compare_bin.size(); k++)
+//                 {
+//                     apply_force(*bin.at(i), *compare_bin.at(k),dmin,davg,navg);
+//                 }
+//             }
+//         }
+//     }
+// }
+
 void print_bins()
 {
-    // for( int i = 0; i < block_row_count; i++ )
-    // {
-    //     printf("bin.size = %i, bin[%i].count = %i\r\n", binArr[i].size, i, binArr[i].count);
-    // }
+    for( int i = 0; i < binVec.size(); i++ )
+    {
+        printf("bin[%i].size = %d,\r\n", i, (int) binVec.at(i).size());
+    }
 }
 
 //
@@ -283,7 +283,9 @@ void move( particle_t &p )
         p.vy = -p.vy;
     }
 
-    int binNum = (int)(p.x/size) + (int)(p.y/size*block_row_count);
+    int frac_x = p.x/size;
+    int frac_y = p.y/size;
+    int binNum = (frac_x * block_row_count ) + (frac_y * block_row_count * block_row_count );
     if (p.binNum != binNum)
     {
         // printf("wtf binnum = %i, p.binnum = %i\r\n", binNum, p.binNum);
