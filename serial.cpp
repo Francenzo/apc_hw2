@@ -48,13 +48,6 @@ int main( int argc, char **argv )
     make_bin(n);
     // int bin[(int)(size/cutoff)][(int)(size/cutoff)][(int)(n/size)];
 
-    // Make bins and set particales into bins
-    int pCount = 0;
-    for( pCount = 0; pCount < n; pCount++ )
-    {
-        set_bin(particles[pCount]);
-    }
-
 // #define DEBUG_LA
 #ifdef DEBUG_LA
     // For visualization
@@ -71,6 +64,15 @@ int main( int argc, char **argv )
 	    navg = 0;
         davg = 0.0;
 	    dmin = 1.0;
+
+        // Clear bins out to redo in case of move
+        clear_bins();
+
+        // Make bins and set particles into bins
+        for(int pCount = 0; pCount < n; pCount++ )
+        {
+            set_bin(particles[pCount]);
+        }
 
         //
         //  compute forces
@@ -128,6 +130,7 @@ int main( int argc, char **argv )
         }
     }
     simulation_time = read_timer( ) - simulation_time;
+    // print_bins();
     
     printf( "n = %d, simulation time = %g seconds", n, simulation_time);
 

@@ -51,6 +51,7 @@ void set_size( int n )
     size = sqrt( density * n );
     // Divide length of side by cutoff length
     block_row_count = (size/cutoff);
+    // block_row_count = 2;
     printf("size = %f, b = %i\r\n", size, block_row_count);
 }
 
@@ -109,16 +110,27 @@ void make_bin(int n)
     binVec = vector< vector<particle_t *> >(b_square);
 }
 
+void clear_bins() 
+{
+    for (int i = 0; i < binVec.size(); i++)
+    {
+        binVec.at(i).clear();
+    }
+}
+
+
 
 //
 // Puts particles into their bins
 //
 void set_bin(particle_t & particle) 
 {
-    int frac_x = particle.x/size;
-    int frac_y = particle.y/size;
-    int binNum = (frac_x * block_row_count ) + (frac_y * block_row_count * block_row_count );
-    // printf("binNum = %i, max = %i, fx = %f, fy = %f, cx = %i, cy = %i\r\n", binNum, block_row_count*block_row_count, particle.x/size, particle.y/size, (int)( (particle.x/size) * block_row_count ), (int) ( (particle.y/size) * block_row_count *block_row_count ));
+    double frac_x = particle.x/size;
+    double frac_y = particle.y/size;
+    int bin_x = frac_x * block_row_count;
+    int bin_y = frac_y * block_row_count;
+    int binNum = bin_x + ( bin_y * block_row_count );
+    // printf("row = %i, binNum = %i, max = %i, fx = %f, fy = %f, cx = %i, cy = %i\r\n", block_row_count, binNum, block_row_count*block_row_count, particle.x/size, particle.y/size, bin_x, bin_y);
     particle.binNum = binNum;
     binVec.at(binNum).push_back(&particle);
 }
@@ -259,16 +271,6 @@ void move( particle_t &p )
     {
         p.y  = p.y < 0 ? -p.y : 2*size-p.y;
         p.vy = -p.vy;
-    }
-
-    // Check if particle moved to new bin
-    int frac_x = p.x/size;
-    int frac_y = p.y/size;
-    int binNum = (frac_x * block_row_count ) + (frac_y * block_row_count * block_row_count );
-    if (p.binNum != binNum)
-    {
-        // printf("wtf binnum = %i, p.binnum = %i\r\n", binNum, p.binNum);
-        move_bin(p);
     }
 }
 
