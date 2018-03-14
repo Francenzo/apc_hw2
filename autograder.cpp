@@ -37,6 +37,7 @@ int main( int argc, char **argv )
           count++;
      
       for (i=0; i<count-1;i++) {
+        //printf("t[i+1](%d) t[i](%d) n[i+1](%lf) n[i](%lf)\n",t[i+1],t[i],n[i+1],n[i]);
         slope [i] = ( log(t[i+1]) - log(t[i]) ) / ( log(n[i+1]*1.0) - log(n[i]*1.0) );
       }
       for (i=0; i<count; i++) {

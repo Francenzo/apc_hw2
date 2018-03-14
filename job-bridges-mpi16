@@ -5,5 +5,10 @@
 #SBATCH -N 1 
 #SBATCH -n 16         
 #SBATCH -p RM
-#SBATCH -t 00:10:00     
-srun -n 16 ./mpi -n 1000 -o mpi.txt
+#SBATCH -t 00:10:00
+module load mpi/gcc_mvapich
+srun -n 16 ./mpi -n 500 -o mpi_sum.txt
+srun -n 16 ./mpi -n 1000 -o mpi_sum.txt
+srun -n 16 ./mpi -n 2000 -o mpi_sum.txt     
+srun -n 16 ./mpi -n 4000 -o mpi_sum.txt
+srun -n 16 ./mpi -n 8000 -o mpi_sum.txt
