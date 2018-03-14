@@ -49,20 +49,21 @@ int main( int argc, char **argv )
     // int bin[(int)(size/cutoff)][(int)(size/cutoff)][(int)(n/size)];
 
     // Make bins and set particales into bins
-    int blah = 0;
-    for( blah = 0; blah < n; blah++ )
+    int pCount = 0;
+    for( pCount = 0; pCount < n; pCount++ )
     {
-        set_bin(particles[blah]);
+        set_bin(particles[pCount]);
     }
 
 // #define DEBUG_LA
 #ifdef DEBUG_LA
+    // For visualization
     char *outname = (char*) malloc(32 * sizeof(char));
 #endif
 
 #ifdef DEBUG_LA
-    printf("blah = %i\r\n", blah);
-    print_bins();
+    printf("pCount = %i\r\n", pCount);
+    // print_bins();
 #endif
 	
     for( int step = 0; step < NSTEPS; step++ )
@@ -78,7 +79,8 @@ int main( int argc, char **argv )
         {
             apply_force_bin(i,&dmin,&davg,&navg);
         }
-        /*
+
+        /* Original compute forces
         for( int i = 0; i < n; i++ )
         {
             particles[i].ax = particles[i].ay = 0;
@@ -117,6 +119,7 @@ int main( int argc, char **argv )
               save( fsave, n, particles );
 
 #ifdef DEBUG_LA
+          // Output for visualization
           sprintf( outname, "out/fout-%05d.txt", step );
           FILE *fout = fopen( outname, "w" );
           save( fout, n, particles);

@@ -27,16 +27,6 @@ typedef struct
 } particle_t;
 
 //
-//  Structure for a bin block
-//
-typedef struct
-{
-  int size;
-  int count;
-  std::vector<particle_t *> vec;
-} bin_t;
-
-//
 //  timing routines
 //
 double read_timer( );
