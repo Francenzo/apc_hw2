@@ -28,8 +28,14 @@ int main(int argc, char **argv)
     char *savename = read_string(argc, argv, "-o", NULL);
     char *sumname = read_string(argc, argv, "-s", NULL);
 
-    FILE *fsave = savename ? fopen(savename, "w") : NULL;
-    FILE *fsum = sumname ? fopen(sumname, "a") : NULL;
+    FILE *fsave = fopen(savename, "w");
+    FILE *fsum = fopen(sumname, "a");
+
+    if (fsave == NULL)
+    {
+        printf("failed to create file %s\n", savename);
+        return;
+    }
 
     particle_t *particles = (particle_t *)malloc(n * sizeof(particle_t));
     set_size(n);
@@ -42,6 +48,7 @@ int main(int argc, char **argv)
 
     for (int step = 0; step < NSTEPS; step++)
     {
+
         navg = 0;
         davg = 0.0;
         dmin = 1.0;
@@ -63,6 +70,7 @@ int main(int argc, char **argv)
 
         if (find_option(argc, argv, "-no") == -1)
         {
+            //printf("find option %d\n",step);
             //
             // Computing statistical data
             //
@@ -77,8 +85,24 @@ int main(int argc, char **argv)
             //
             //  save if necessary
             //
-            if (fsave && (step % SAVEFREQ) == 0)
-                save(fsave, n, particles);
+            if (fsave == NULL)
+            {
+                printf("null");
+            }
+            else
+            {
+                printf("not null");
+            }
+
+            if (fsave != NULL)
+            {
+                printf("curr step1 %d\n", step);
+                if ((step % SAVEFREQ) == 0)
+                {
+                    printf("curr step2 %d\n", step);
+                    save(fsave, n, particles);
+                }
+            }
         }
     }
     simulation_time = read_timer() - simulation_time;

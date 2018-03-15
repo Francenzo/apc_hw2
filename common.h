@@ -1,6 +1,9 @@
 #ifndef __CS267_COMMON_H__
 #define __CS267_COMMON_H__
 
+#include "stdio.h"
+#include "quad.h"
+
 inline int min( int a, int b ) { return a < b ? a : b; }
 inline int max( int a, int b ) { return a > b ? a : b; }
 
@@ -22,6 +25,15 @@ typedef struct
   double ax;
   double ay;
 } particle_t;
+
+
+// quard using
+// Returns true if the body is in quadrant q.
+bool particlein(particle_t* p,Quad *q);
+
+// return a new particle_t that represents the center-of-mass of the two bodies a and b. 
+particle_t* aggregate(particle_t* a, particle_t* b);
+particle_t *newparticle(Quad *q);
 
 //
 //  timing routines

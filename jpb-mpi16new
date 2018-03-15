@@ -1,0 +1,30 @@
+#!/bin/bash
+#SBATCH -A cc3uv3p # 2017 XSEDE Applications of Parallel Computing Course Allocation
+#SBATCH -J particle-mpi16
+#SBATCH -o particle-mpi16.stdout
+#SBATCH -N 1 
+#SBATCH -n 16         
+#SBATCH -p RM
+#SBATCH -t 00:10:00
+
+
+
+#echo commands to stdout
+set -x
+
+#move to working directory
+cd $SCRATCH
+
+#set variable so that task placement works as expected
+export  I_MPI_JOB_RESPECT_PROCESS_PLACEMENT=0
+
+#copy input files to LOCAL file storage
+srun -N $SLURM_NNODES --ntasks-per-node=1 \
+  sh -c 'cp $PROJECT/input.${SLURM_PROCID} $LOCAL'
+
+#run MPI program
+mpirun -np $SLURM_NTASKS ./mpi
+
+#copy output files to persistent space
+srun -N $SLURM_NNODES --ntasks-per-node=1 \ 
+  sh -c 'cp $LOCAL/output.* $PROJECT'

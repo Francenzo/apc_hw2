@@ -184,3 +184,24 @@ char *read_string(int argc, char **argv, const char *option, char *default_value
         return argv[iplace + 1];
     return default_value;
 }
+
+bool particlein(particle_t *p, Quad *q)
+{
+    double cl = q->cl;
+    if ((q->llx + cl > p->x) && (q->lly + cl > p->y) && (p->x > q->llx) && (p->y > q->lly))
+    {
+        return true;
+    }
+
+    return false;
+}
+
+particle_t *aggregate(particle_t *a, particle_t *b)
+{
+    particle_t *newp = new (particle_t);
+    //assume mass is 0.01
+    newp->x = 0.5 * (a->x + b->x);
+    newp->y = 0.5 * (a->y + b->y);
+
+    return newp;
+}
