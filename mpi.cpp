@@ -2,8 +2,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <math.h>
 #include "common.h"
-
+#include "bhtree.h"
+#define density 0.0005
 //
 //  benchmarking program
 //
@@ -72,15 +74,54 @@ int main(int argc, char **argv)
     int nlocal = partition_sizes[rank];
     particle_t *local = (particle_t *)malloc(nlocal * sizeof(particle_t));
 
+    //init the array to gather all the root value
+    particle_t *allroot = (particle_t *)malloc(n_proc * sizeof(particle_t));
+
     //
     //  initialize and distribute the particles (that's fine to leave it unoptimized)
     //
 
-    //printf("test current rank %d\n", rank);
-    set_size(n);
+    //every thread init their own part
+    //make sure the points fall into low left to upper right
+    Quad *initq = new (Quad);
+    double size;
+    //get the total size
+    size = sqrt(density * n);
+
+    printf("size %f\n", size);
+    initq->cl = size / 2.0;
+
     if (rank == 0)
-        init_particles(n, particles);
-    MPI_Scatterv(particles, partition_sizes, partition_offsets, PARTICLE, local, nlocal, PARTICLE, 0, MPI_COMM_WORLD);
+    {
+        initq->llx = 0;
+        initq->lly = 0;
+    }
+    if (rank == 1)
+    {
+        initq->llx = size / 2.0;
+        initq->lly = 0;
+    }
+    if (rank == 2)
+    {
+        initq->llx = 0;
+        initq->lly = size / 2.0;
+    }
+    if (rank == 3)
+    {
+        initq->llx = size / 2.0;
+        initq->lly = size / 2.0;
+    }
+
+    init_particles_inthread(nlocal, initq, local);
+
+    //printf("test current rank %d\n", rank);
+    //
+    //if (rank == 0)
+    //{
+    //    init_particles(n, particles);
+    //}
+
+    //MPI_Scatterv(particles, partition_sizes, partition_offsets, PARTICLE, local, nlocal, PARTICLE, 0, MPI_COMM_WORLD);
 
     //
     //  simulate a number of time steps
@@ -93,7 +134,7 @@ int main(int argc, char **argv)
         davg = 0.0;
 
         //1 get speecific local elements
-        MPI_Allgatherv(local, nlocal, PARTICLE, particles, partition_sizes, partition_offsets, PARTICLE, MPI_COMM_WORLD);
+        //MPI_Allgatherv(local, nlocal, PARTICLE, particles, partition_sizes, partition_offsets, PARTICLE, MPI_COMM_WORLD);
         if (find_option(argc, argv, "-no") == -1)
         {
             if (fsave && (step % SAVEFREQ) == 0)
@@ -102,14 +143,46 @@ int main(int argc, char **argv)
             }
         }
 
-        //2 build tree
+        //2 build tree (tree should be buit for every iteration)
 
-        //3 caculate the mass points
+        //init position should relate to the rank
 
-        //4 compute force
+        BHTreeNode *bhtree = BHTree(initq);
+        for (int i = 0; i < nlocal; i++)
+        {
+            BHTinsert(bhtree, local + i);
+        }
 
-        //5 move
+        //printf("rank %d insert ok\n", rank);
 
+        //3 compute force (for the particle in other mpi thread, use root value to take place )
+        //an array is needed to store all the root value from other mpi thread
+        //compute the force in local tree
+        for (int i = 0; i < nlocal; i++)
+        {
+            applyForceTree(local + i, bhtree);
+        }
+
+        //printf("rank %d applyforce ok\n", rank);
+        //compute the force from the other mpi thread
+        //collect the root value of other mpi thread
+
+        /*
+        MPI_Allgather(void* send_data,int send_count,MPI_Datatype send_datatype,void* recv_data,int recv_count,MPI_Datatype recv_datatype,MPI_Comm communicator)
+        */
+        //printf("thread %d %f %f\n", rank, bhtree->particle->x, bhtree->particle->y);
+
+        /*
+        MPI_Allgather(bhtree->particle, 1, PARTICLE, allroot, n_proc, PARTICLE, MPI_COMM_WORLD);
+
+        if (rank == 0)
+        {
+            for (int i = 0; i < n_proc; i++)
+            {
+                printf("index %d x %f y %f\n", i, (allroot + i)->x, (allroot + i)->y);
+            }
+        }
+*/
         //
         //  collect all global data locally (not good idea to do)
         //
@@ -121,6 +194,7 @@ int main(int argc, char **argv)
         //
         //  compute all forces
         //
+        /*
         for (int i = 0; i < nlocal; i++)
         {
             local[i].ax = local[i].ay = 0;
@@ -149,13 +223,23 @@ int main(int argc, char **argv)
                     absmin = rdmin;
             }
         }
+        */
 
         //
         //  move particles, only consider the particles in current thread
         //
+
+        //4 move
         for (int i = 0; i < nlocal; i++)
-            move(local[i]);
+        {
+            move(local[i], size);
+        }
+        //if (rank == 0)
+        //{
+        //    printf("index %d\n", step);
+        //}
     }
+
     simulation_time = read_timer() - simulation_time;
 
     if (rank == 0)

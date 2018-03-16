@@ -28,17 +28,17 @@ Quad *NW(Quad *q)
 {
     if (q == NULL)
     {
-        printf("the quad is null in NW\n");
+        //printf("the quad is null in NW\n");
         return NULL;
     }
-    printf("funcNW %f %f %f\n",q->llx,q->lly,q->cl);
+    //printf("funcNW %f %f %f\n",q->llx,q->lly,q->cl);
     Quad *newq = new (Quad);
     
     newq->llx = q->llx;
     newq->lly = q->lly + (q->cl / 2.0);
     newq->cl = 0.5 * q->cl;
 
-    printf("funcNW newq %f %f %f\n",newq->llx,newq->lly,q->cl);
+    //printf("funcNW newq %f %f %f\n",newq->llx,newq->lly,q->cl);
     return newq;
 }
 

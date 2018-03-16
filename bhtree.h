@@ -24,5 +24,6 @@ void BHTinsert(BHTreeNode*bht,particle_t *p);
 //approximate the net force acting on Body b from all the bodies in the invoking Barnes-Hut tree, and update b's force accordingly.
 void BHTupdateForce(BHTreeNode*bht,particle_t *p);
 
+void applyForceTree(particle_t *particle, BHTreeNode *bht);
 
 #endif

@@ -7,6 +7,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include "common.h"
+#include "quad.h"
 
 double size;
 
@@ -44,6 +45,39 @@ void set_size(int n)
     size = sqrt(density * n);
 }
 
+void init_particles_inthread(int num, Quad *initq,particle_t *p)
+{
+    //printf("size %f\n",initq->cl);
+
+    double LOx = initq->llx;
+    double LOy = initq->lly;
+    double HIx = LOx + initq->cl;
+    double HIy = LOy + initq->cl;
+    srand(time(0));
+    for (int i = 0; i < num; i++)
+    {
+
+    
+        double fxfinal = LOx + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX / (HIx - LOx)));
+
+       
+        double fyfinal = LOy + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX / (HIy - LOy)));
+        //
+        //  distribute particles evenly to ensure proper spacing
+        //
+        p[i].x = fxfinal;
+        p[i].y = fyfinal;
+
+        //
+        //  assign random velocities within a bound
+        //
+        p[i].vx = drand48() * 2 - 1;
+        p[i].vy = drand48() * 2 - 1;
+
+        //printf("init %f %f\n", p[i].x, p[i].y);
+    }
+}
+
 //
 //  Initialize the particle positions and velocities
 //
@@ -78,6 +112,8 @@ void init_particles(int n, particle_t *p)
         //
         p[i].vx = drand48() * 2 - 1;
         p[i].vy = drand48() * 2 - 1;
+
+        printf("init %f %f\n", p[i].x, p[i].y);
     }
     free(shuffle);
 }
@@ -117,7 +153,7 @@ void apply_force(particle_t &particle, particle_t &neighbor, double *dmin, doubl
 //
 //  integrate the ODE
 //
-void move(particle_t &p)
+void move(particle_t &p,double size)
 {
     //
     //  slightly simplified Velocity Verlet integration

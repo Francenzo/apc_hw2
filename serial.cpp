@@ -31,12 +31,6 @@ int main(int argc, char **argv)
     FILE *fsave = fopen(savename, "w");
     FILE *fsum = fopen(sumname, "a");
 
-    if (fsave == NULL)
-    {
-        printf("failed to create file %s\n", savename);
-        return;
-    }
-
     particle_t *particles = (particle_t *)malloc(n * sizeof(particle_t));
     set_size(n);
     init_particles(n, particles);
