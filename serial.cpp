@@ -55,7 +55,6 @@ int main( int argc, char **argv )
 #endif
 
 #ifdef DEBUG_LA
-    printf("pCount = %i\r\n", pCount);
     // print_bins();
 #endif
 	
