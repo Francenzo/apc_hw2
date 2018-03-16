@@ -26,4 +26,6 @@ void BHTupdateForce(BHTreeNode*bht,particle_t *p);
 
 void applyForceTree(particle_t *particle, BHTreeNode *bht);
 
+void applyForceTwoParticle(particle_t *particlea, particle_t *particleb);
+
 #endif

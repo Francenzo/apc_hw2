@@ -75,7 +75,7 @@ int main(int argc, char **argv)
     particle_t *local = (particle_t *)malloc(nlocal * sizeof(particle_t));
 
     //init the array to gather all the root value
-    particle_t *allroot = (particle_t *)malloc(n_proc * sizeof(particle_t));
+    particle_t *allroot = (particle_t *)calloc(n_proc, sizeof(particle_t));
 
     //
     //  initialize and distribute the particles (that's fine to leave it unoptimized)
@@ -84,35 +84,44 @@ int main(int argc, char **argv)
     //every thread init their own part
     //make sure the points fall into low left to upper right
     Quad *initq = new (Quad);
-    double size;
+    double localsize;
     //get the total size
-    size = sqrt(density * n);
+    localsize = sqrt(density * particle_per_proc);
 
-    printf("size %f\n", size);
-    initq->cl = size / 2.0;
+    //printf("localsize %f\n", localsize);
+    initq->cl = localsize;
 
-    if (rank == 0)
+    //partition
+
+    if (n_proc == 1)
     {
         initq->llx = 0;
         initq->lly = 0;
     }
-    if (rank == 1)
-    {
-        initq->llx = size / 2.0;
-        initq->lly = 0;
-    }
-    if (rank == 2)
+    else if (n_proc == 2)
     {
         initq->llx = 0;
-        initq->lly = size / 2.0;
+        initq->lly = 0 + rank * localsize;
     }
-    if (rank == 3)
+    else if (n_proc == 4)
     {
-        initq->llx = size / 2.0;
-        initq->lly = size / 2.0;
+        initq->llx = 0 + (rank % 2) * localsize;
+        initq->lly = 0 + (rank / 2) * localsize;
+    }
+    else if (n_proc == 8)
+    {
+        initq->llx = 0 + (rank % 4) * localsize;
+        initq->lly = 0 + (rank / 4) * localsize;
+    }
+    else if (n_proc == 16)
+    {
+        initq->llx = 0 + (rank % 4) * localsize;
+        initq->lly = 0 + (rank / 4) * localsize;
     }
 
     init_particles_inthread(nlocal, initq, local);
+
+    //printf("rank value %d, x  %f, y  %f\n",rank,initq->llx,initq->lly);
 
     //printf("test current rank %d\n", rank);
     //
@@ -150,31 +159,47 @@ int main(int argc, char **argv)
         BHTreeNode *bhtree = BHTree(initq);
         for (int i = 0; i < nlocal; i++)
         {
-            BHTinsert(bhtree, local + i);
+            if (Quadcontains(initq, (local + i)->x, (local + i)->y) == true)
+            {
+                BHTinsert(bhtree, local + i);
+            }
         }
 
-        //printf("rank %d insert ok\n", rank);
+        //get root node from other partition
+        //printf("threadid %d %f %f\n", rank, bhtree->particle->x, bhtree->particle->y);
+        //attention, recieve number of recieve value is 1
+        MPI_Allgather(bhtree->particle, 1, PARTICLE, allroot, 1, PARTICLE, MPI_COMM_WORLD);
 
         //3 compute force (for the particle in other mpi thread, use root value to take place )
         //an array is needed to store all the root value from other mpi thread
         //compute the force in local tree
+
         for (int i = 0; i < nlocal; i++)
         {
             applyForceTree(local + i, bhtree);
+            for (int j = 0; j < n_proc; j++)
+            {
+                if (j != rank)
+                {
+                    applyForceTwoParticle((local + i), allroot+j);
+                }
+            }
         }
 
         //printf("rank %d applyforce ok\n", rank);
         //compute the force from the other mpi thread
         //collect the root value of other mpi thread
 
-        /*
-        MPI_Allgather(void* send_data,int send_count,MPI_Datatype send_datatype,void* recv_data,int recv_count,MPI_Datatype recv_datatype,MPI_Comm communicator)
-        */
-        //printf("thread %d %f %f\n", rank, bhtree->particle->x, bhtree->particle->y);
+        //MPI_Allgather(void* send_data,int send_count,MPI_Datatype send_datatype,void* recv_data,int recv_count,MPI_Datatype recv_datatype,MPI_Comm communicator)
+
+        //MPI_Barrier(MPI_COMM_WORLD);
+
+        //if (bhtree->particle != NULL)
+        //{
+
+        // }
 
         /*
-        MPI_Allgather(bhtree->particle, 1, PARTICLE, allroot, n_proc, PARTICLE, MPI_COMM_WORLD);
-
         if (rank == 0)
         {
             for (int i = 0; i < n_proc; i++)
@@ -229,11 +254,15 @@ int main(int argc, char **argv)
         //  move particles, only consider the particles in current thread
         //
 
+        //printf("apply force ok\n");
         //4 move
         for (int i = 0; i < nlocal; i++)
         {
-            move(local[i], size);
+            //for n=2 and n=8 the region is not squre, consider this
+            //printf("index %d x %f y %f ax %f ay %f\n", i, local[i].x, local[i].y, local[i].ax, local[i].ay);
+            move(local[i], localsize * n_proc);
         }
+
         //if (rank == 0)
         //{
         //    printf("index %d\n", step);

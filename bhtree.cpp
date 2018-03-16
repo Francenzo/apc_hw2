@@ -205,6 +205,31 @@ void printBT(BHTreeNode *bnode, queue<BHTreeNode *> &q)
     }
 }
 
+//compute the force that particleb give particlea
+void applyForceTwoParticle(particle_t *particlea, particle_t *particleb)
+{
+    double dx = particleb->x - particlea->x;
+    double dy = particleb->y - particlea->y;
+    double r2 = dx * dx + dy * dy;
+
+    r2 = fmax(r2, min_r * min_r);
+
+    if (r2 > cutoff * cutoff)
+    {
+        //do not compute the under branch
+        return;
+    }
+    double r = sqrt(r2);
+
+    //
+    //  very simple short-range repulsive force
+    //
+    double coef = (1 - cutoff / r) / r2 / mass;
+    particlea->ax += coef * dx;
+    particlea->ay += coef * dy;
+}
+
+
 void applyForceTree(particle_t *particle, BHTreeNode *bht)
 {
     BHTreeNode *curr = bht;
@@ -228,6 +253,7 @@ void applyForceTree(particle_t *particle, BHTreeNode *bht)
         double coef = (1 - cutoff / r) / r2 / mass;
         particle->ax += coef * dx;
         particle->ay += coef * dy;
+
         //range the child node
         if (curr->NW != NULL)
         {

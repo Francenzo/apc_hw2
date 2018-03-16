@@ -45,7 +45,7 @@ void set_size(int n)
     size = sqrt(density * n);
 }
 
-void init_particles_inthread(int num, Quad *initq,particle_t *p)
+void init_particles_inthread(int num, Quad *initq, particle_t *p)
 {
     //printf("size %f\n",initq->cl);
 
@@ -57,10 +57,8 @@ void init_particles_inthread(int num, Quad *initq,particle_t *p)
     for (int i = 0; i < num; i++)
     {
 
-    
         double fxfinal = LOx + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX / (HIx - LOx)));
 
-       
         double fyfinal = LOy + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX / (HIy - LOy)));
         //
         //  distribute particles evenly to ensure proper spacing
@@ -73,6 +71,9 @@ void init_particles_inthread(int num, Quad *initq,particle_t *p)
         //
         p[i].vx = drand48() * 2 - 1;
         p[i].vy = drand48() * 2 - 1;
+
+        p[i].ax = 0;
+        p[i].ay = 0;
 
         //printf("init %f %f\n", p[i].x, p[i].y);
     }
@@ -153,12 +154,18 @@ void apply_force(particle_t &particle, particle_t &neighbor, double *dmin, doubl
 //
 //  integrate the ODE
 //
-void move(particle_t &p,double size)
+void move(particle_t &p, double size)
 {
     //
     //  slightly simplified Velocity Verlet integration
     //  conserves energy better than explicit Euler method
     //
+
+    
+    if (p.ax == 0 && p.ay == 0)
+    {
+        return;
+    }
     p.vx += p.ax * dt;
     p.vy += p.ay * dt;
     p.x += p.vx * dt;
@@ -171,11 +178,13 @@ void move(particle_t &p,double size)
     {
         p.x = p.x < 0 ? -p.x : 2 * size - p.x;
         p.vx = -p.vx;
+        //printf("while 1 x (%f) y (%f) vx (%f) vy (%f)\n",p.x,p.y, p.vx,p.vy);
     }
     while (p.y < 0 || p.y > size)
     {
         p.y = p.y < 0 ? -p.y : 2 * size - p.y;
         p.vy = -p.vy;
+        // printf("while 2 x (%f) y (%f) vx (%f) vy (%f)\n",p.x,p.y, p.vx,p.vy);
     }
 }
 
