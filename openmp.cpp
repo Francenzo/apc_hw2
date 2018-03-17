@@ -10,7 +10,7 @@
 //
 int main( int argc, char **argv )
 {   
-    int navg,nabsavg=0,numthreads; 
+    int navg,nabsavg=0,num_threads; 
     double dmin, absmin=1.0,davg,absavg=0.0;
 	
     if( find_option( argc, argv, "-h" ) >= 0 )
@@ -40,17 +40,53 @@ int main( int argc, char **argv )
     //
     double simulation_time = read_timer( );
 
+    // Size of one side of a 2D bin square
+    int bin_count = get_bin_count();
+    // bin_t * binArr = make_bin(n);
+    make_bin(n);
+
     #pragma omp parallel private(dmin) 
     {
-    numthreads = omp_get_num_threads();
+    num_threads = omp_get_num_threads();
+    int thread_id = omp_get_thread_num();
+    // Index start of bins for this thread
+    int thread_start = (bin_count+1)/num_threads*thread_id;
+    // Index end of bins for this thread
+    // Max function added to account for odd # of bins
+    int thread_end = min((bin_count+1)/num_threads*(thread_id+1), bin_count);
+    printf("This thread num = %i, start = %i, end = %i\r\n", thread_id, thread_start, thread_end);
     for( int step = 0; step < 1000; step++ )
     {
         navg = 0;
         davg = 0.0;
-	dmin = 1.0;
+	    dmin = 1.0;
         //
         //  compute all forces
         //
+        // Clear bins out to redo in case of move
+        #pragma omp master
+        clear_bins(thread_start, thread_end);
+        #pragma omp barrier
+
+        // Make bins and set particles into bins
+        #pragma omp master
+        for(int pCount = 0; pCount < n; pCount++ )
+        {
+            set_bin(particles[pCount]);
+        }
+
+        #pragma omp barrier
+        // printf("Computing forces... step: %i\r\n", step);
+        //
+        //  compute forces
+        //
+        #pragma omp for reduction (+:navg) reduction(+:davg)
+        for (int i=thread_start; i < thread_end; i++)
+        {
+            apply_force_bin(i,&dmin,&davg,&navg);
+        }
+
+        /*
         #pragma omp for reduction (+:navg) reduction(+:davg)
         for( int i = 0; i < n; i++ )
         {
@@ -58,6 +94,7 @@ int main( int argc, char **argv )
             for (int j = 0; j < n; j++ )
                 apply_force( particles[i], particles[j],&dmin,&davg,&navg);
         }
+        */
         
 		
         //
@@ -79,7 +116,7 @@ int main( int argc, char **argv )
           }
 
           #pragma omp critical
-	  if (dmin < absmin) absmin = dmin; 
+	      if (dmin < absmin) absmin = dmin; 
 		
           //
           //  save if necessary
@@ -89,10 +126,10 @@ int main( int argc, char **argv )
               save( fsave, n, particles );
         }
     }
-}
+    }
     simulation_time = read_timer( ) - simulation_time;
     
-    printf( "n = %d,threads = %d, simulation time = %g seconds", n,numthreads, simulation_time);
+    printf( "n = %d,threads = %d, simulation time = %g seconds", n,num_threads, simulation_time);
 
     if( find_option( argc, argv, "-no" ) == -1 )
     {
@@ -114,7 +151,7 @@ int main( int argc, char **argv )
     // Printing summary data
     //
     if( fsum)
-        fprintf(fsum,"%d %d %g\n",n,numthreads,simulation_time);
+        fprintf(fsum,"%d %d %g\n",n,num_threads,simulation_time);
 
     //
     // Clearing space

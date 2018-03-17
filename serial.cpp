@@ -65,7 +65,7 @@ int main( int argc, char **argv )
 	    dmin = 1.0;
 
         // Clear bins out to redo in case of move
-        clear_bins();
+        clear_bins(0,bin_count);
 
         // Make bins and set particles into bins
         for(int pCount = 0; pCount < n; pCount++ )

@@ -110,9 +110,17 @@ void make_bin(int n)
     binVec = vector< vector<particle_t *> >(b_square);
 }
 
-void clear_bins() 
+
+//
+// Clears bins at given indexes
+//
+void clear_bins(int begin, int end) 
 {
-    for (int i = 0; i < binVec.size(); i++)
+    // Check constraints
+    begin = max(begin,0);
+    end = min(end, binVec.size()-1);
+
+    for (int i = begin; i <= end; i++)
     {
         binVec.at(i).clear();
     }
