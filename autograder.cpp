@@ -84,10 +84,8 @@ int main(int argc, char **argv)
       fscanf(fread, "%d %lf", &n[count], &t[count]);
       count++;
       p[0] = 1;
-      printf("%d %lf", &n[count], &t[count]);
       while (fscanf(fread, "%d %d %lf", &n[count], &p[count], &t[count]) != EOF)
       {
-        printf("%d %d %lf\n", &n[count], &p[count], &t[count]);
         count++;
       }
     }

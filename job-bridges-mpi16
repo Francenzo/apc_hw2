@@ -1,9 +1,11 @@
 #!/bin/bash
-#!/bin/bash
-#SBATCH -J mpi
-#SBATCH -o mpi.stdout
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=4
-#SBATCH -p compute
-#SBATCH -t 00:01:00
+#SBATCH -A cc3uv3p # 2017 XSEDE Applications of Parallel Computing Course Allocation
+#SBATCH -J particle-mpi16
+#SBATCH -o particle-mpi16.stdout
+#SBATCH -N 1 
+#SBATCH -n 1         
+#SBATCH -p RM
+#SBATCH -t 00:10:00
+module load mpi/gcc_mvapich
+rm mpi_sum.txt
 srun -n 2 ./mpi -n 500 -no -s mpi_sum.txt
