@@ -126,6 +126,17 @@ void clear_bins(int begin, int end)
     }
 }
 
+//
+// Clears bin at given indexes
+//
+void clear_bin(int index) 
+{
+    // Check constraints
+    index = max(index,0);
+    index = min(index, binVec.size()-1);
+    binVec.at(index).clear();
+}
+
 
 
 //

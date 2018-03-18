@@ -40,21 +40,28 @@ int main( int argc, char **argv )
     //
     double simulation_time = read_timer( );
 
+// #define DEBUG_LA
+#ifdef DEBUG_LA
+    // For visualization
+    char *outname = (char*) malloc(32 * sizeof(char));
+#endif
+
     // Size of one side of a 2D bin square
     int bin_count = get_bin_count();
     // bin_t * binArr = make_bin(n);
     make_bin(n);
+    clear_bins(0, bin_count);
 
-    #pragma omp parallel private(dmin) 
-    {
-    num_threads = omp_get_num_threads();
-    int thread_id = omp_get_thread_num();
+    // #pragma omp parallel private(dmin) 
+    // {
+    // num_threads = omp_get_num_threads();
+    // int thread_id = omp_get_thread_num();
     // Index start of bins for this thread
-    int thread_start = (bin_count+1)/num_threads*thread_id;
+    // int thread_start = (bin_count+1)/num_threads*thread_id;
     // Index end of bins for this thread
     // Max function added to account for odd # of bins
-    int thread_end = min((bin_count+1)/num_threads*(thread_id+1), bin_count);
-    printf("This thread num = %i, start = %i, end = %i\r\n", thread_id, thread_start, thread_end);
+    // int thread_end = min((bin_count+1)/num_threads*(thread_id+1), bin_count);
+    // printf("This thread num = %i, start = %i, end = %i\r\n", thread_id, thread_start, thread_end);
     for( int step = 0; step < 1000; step++ )
     {
         navg = 0;
@@ -64,24 +71,30 @@ int main( int argc, char **argv )
         //  compute all forces
         //
         // Clear bins out to redo in case of move
-        #pragma omp master
-        clear_bins(thread_start, thread_end);
-        #pragma omp barrier
+        // clear_bins(thread_start, thread_end);
+        #pragma omp for
+        for( int i = 0; i < bin_count; i++ ) 
+            clear_bin(i);
+
+        // #pragma omp barrier
+
 
         // Make bins and set particles into bins
-        #pragma omp master
+        // #pragma omp master
+        #pragma omp for
         for(int pCount = 0; pCount < n; pCount++ )
         {
             set_bin(particles[pCount]);
         }
 
-        #pragma omp barrier
+        // #pragma omp barrier
         // printf("Computing forces... step: %i\r\n", step);
         //
         //  compute forces
         //
-        #pragma omp for reduction (+:navg) reduction(+:davg)
-        for (int i=thread_start; i < thread_end; i++)
+        // #pragma omp for reduction (+:navg) reduction(+:davg)
+        #pragma omp for
+        for (int i=0; i < bin_count; i++)
         {
             apply_force_bin(i,&dmin,&davg,&navg);
         }
@@ -125,7 +138,18 @@ int main( int argc, char **argv )
           if( fsave && (step%SAVEFREQ) == 0 )
               save( fsave, n, particles );
         }
-    }
+
+#ifdef DEBUG_LA
+          // Output for visualization
+          #pragma omp master
+          {
+          sprintf( outname, "out/fout-%05d.txt", step );
+          FILE *fout = fopen( outname, "w" );
+          save( fout, n, particles);
+          fclose( fout );
+          }
+#endif
+    // }
     }
     simulation_time = read_timer( ) - simulation_time;
     
