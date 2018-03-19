@@ -260,7 +260,7 @@ int main(int argc, char **argv)
         {
             //for n=2 and n=8 the region is not squre, consider this
             //printf("index %d x %f y %f ax %f ay %f\n", i, local[i].x, local[i].y, local[i].ax, local[i].ay);
-            move(local[i], localsize * n_proc);
+            move_mpi(local[i], localsize * n_proc);
         }
 
         //if (rank == 0)

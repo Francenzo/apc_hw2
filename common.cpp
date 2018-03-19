@@ -304,13 +304,12 @@ void apply_force(particle_t &particle, particle_t &neighbor, double *dmin, doubl
 //
 //  integrate the ODE
 //
-void move(particle_t &p, double size)
+void move_mpi(particle_t &p, double size)
 {
     //
     //  slightly simplified Velocity Verlet integration
     //  conserves energy better than explicit Euler method
     //
-
     
     if (p.ax == 0 && p.ay == 0)
     {
@@ -328,13 +327,40 @@ void move(particle_t &p, double size)
     {
         p.x = p.x < 0 ? -p.x : 2 * size - p.x;
         p.vx = -p.vx;
-        //printf("while 1 x (%f) y (%f) vx (%f) vy (%f)\n",p.x,p.y, p.vx,p.vy);
     }
     while (p.y < 0 || p.y > size)
     {
         p.y = p.y < 0 ? -p.y : 2 * size - p.y;
         p.vy = -p.vy;
-        // printf("while 2 x (%f) y (%f) vx (%f) vy (%f)\n",p.x,p.y, p.vx,p.vy);
+    }
+}
+
+//
+//  integrate the ODE
+//
+void move( particle_t &p )
+{
+    //
+    //  slightly simplified Velocity Verlet integration
+    //  conserves energy better than explicit Euler method
+    //
+    p.vx += p.ax * dt;
+    p.vy += p.ay * dt;
+    p.x  += p.vx * dt;
+    p.y  += p.vy * dt;
+
+    //
+    //  bounce from walls
+    //
+    while( p.x < 0 || p.x > size )
+    {
+        p.x  = p.x < 0 ? -p.x : 2*size-p.x;
+        p.vx = -p.vx;
+    }
+    while( p.y < 0 || p.y > size )
+    {
+        p.y  = p.y < 0 ? -p.y : 2*size-p.y;
+        p.vy = -p.vy;
     }
 }
 
