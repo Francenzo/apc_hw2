@@ -3,7 +3,9 @@
 #SBATCH -J particle-mpi16
 #SBATCH -o particle-mpi16.stdout
 #SBATCH -N 1 
-#SBATCH -n 16         
+#SBATCH -n 1         
 #SBATCH -p RM
-#SBATCH -t 00:10:00     
-srun -n 16 ./mpi -n 1000 -o mpi.txt
+#SBATCH -t 00:10:00
+module load mpi/gcc_mvapich
+rm mpi_sum.txt
+srun -n 2 ./mpi -n 500 -no -s mpi_sum.txt
