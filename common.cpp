@@ -6,10 +6,17 @@
 #include <math.h>
 #include <time.h>
 #include <sys/time.h>
+#include <vector>
 #include "common.h"
 #include "quad.h"
 
+using namespace std;
+
 double size;
+// Amount of bins in one row
+int block_row_count;
+// Vector of bins
+vector< vector<particle_t*> > binVec;
 
 //
 //  tuned constants
@@ -42,7 +49,11 @@ double read_timer()
 //
 void set_size(int n)
 {
-    size = sqrt(density * n);
+        size = sqrt( density * n );
+    // Divide length of side by cutoff length
+    block_row_count = (size/cutoff);
+    // block_row_count = 2;
+    printf("size = %f, b = %i\r\n", size, block_row_count);
 }
 
 void init_particles_inthread(int num, Quad *initq, particle_t *p)
@@ -120,11 +131,150 @@ void init_particles(int n, particle_t *p)
 }
 
 //
+// Get total number of bins
+//
+int get_bin_count() 
+{
+    return (block_row_count*block_row_count);
+}
+
+//
+// Create vector of bins
+//
+void make_bin(int n) 
+{
+    int b_square = block_row_count*block_row_count;
+    binVec = vector< vector<particle_t *> >(b_square);
+}
+
+
+//
+// Clears bins at given indexes
+//
+void clear_bins(int begin, int end) 
+{
+    // Check constraints
+    begin = max(begin,0);
+    end = min(end, binVec.size()-1);
+
+    for (int i = begin; i <= end; i++)
+    {
+        binVec.at(i).clear();
+    }
+}
+
+//
+// Clears bin at given indexes
+//
+void clear_bin(int index) 
+{
+    // Check constraints
+    index = max(index,0);
+    index = min(index, binVec.size()-1);
+    binVec.at(index).clear();
+}
+
+
+
+//
+// Puts particles into their bins
+//
+void set_bin(particle_t & particle) 
+{
+    double frac_x = particle.x/size;
+    double frac_y = particle.y/size;
+    int bin_x = frac_x * block_row_count;
+    int bin_y = frac_y * block_row_count;
+    int binNum = bin_x + ( bin_y * block_row_count );
+    // printf("row = %i, binNum = %i, max = %i, fx = %f, fy = %f, cx = %i, cy = %i\r\n", block_row_count, binNum, block_row_count*block_row_count, particle.x/size, particle.y/size, bin_x, bin_y);
+    particle.binNum = binNum;
+    binVec.at(binNum).push_back(&particle);
+}
+
+//
+// Move particle into new bin
+//
+void move_bin(particle_t & particle) 
+{
+    vector<particle_t*> bin = binVec.at(particle.binNum);
+
+    // Look for particle in bin and remove it before transfer
+    for(int iCount = 0; iCount < bin.size(); iCount++)
+    {
+        if ((&particle) == bin.at(iCount))
+        {
+            bin.erase(bin.begin()+iCount);
+            set_bin(particle);
+            return;
+        }
+    }
+
+    printf("Error: Could not find particle in bin.\r\n");
+    exit(-1);
+
+}
+
+//
+// Apply force to all particles in current bin
+// Include surrounding bins to address cutoff
+//
+void apply_force_bin(int binNum, double *dmin, double *davg, int *navg)
+{
+    vector<particle_t*> bin = binVec.at(binNum);
+
+    // All surrounding bins in a 3x3 square
+    int binsToCheck[] = {   binNum - block_row_count - 1,
+                            binNum - block_row_count,
+                            binNum - block_row_count + 1,
+                            binNum - 1,
+                            binNum,
+                            binNum + 1,
+                            binNum + block_row_count - 1,
+                            binNum + block_row_count,
+                            binNum + block_row_count + 1
+                        };
+
+    // Set acceleration of all particles in the bin to 0
+    for (int i = 0 ; i < bin.size(); i++)
+    {
+        bin.at(i)->ax = bin.at(i)->ay = 0;
+    }
+
+    // Address each bin fully before moving to next
+    for (int i = 0; i < 9; i++)
+    {
+        int compareBinNum = binsToCheck[i];
+        if (compareBinNum >= 0 && compareBinNum < block_row_count*block_row_count)
+        {
+            vector<particle_t*> compare_bin = binVec.at(compareBinNum);
+            for (int j = 0; j < bin.size(); j++)
+            {
+                for (int k = 0; k < compare_bin.size(); k++)
+                {
+                    apply_force(*bin.at(j), *compare_bin.at(k),dmin,davg,navg);
+                }
+            }
+        }
+    }
+}
+
+//
+// Print all sizes of bins
+// Debug function
+//
+void print_bins()
+{
+    for( int i = 0; i < binVec.size(); i++ )
+    {
+        printf("bin[%i].size = %d,\r\n", i, (int) binVec.at(i).size());
+    }
+}
+
+//
 //  interact two particles
 //
 void apply_force(particle_t &particle, particle_t &neighbor, double *dmin, double *davg, int *navg)
 {
-
     double dx = neighbor.x - particle.x;
     double dy = neighbor.y - particle.y;
     double r2 = dx * dx + dy * dy;

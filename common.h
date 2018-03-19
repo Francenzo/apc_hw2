@@ -7,6 +7,8 @@
 inline int min( int a, int b ) { return a < b ? a : b; }
 inline int max( int a, int b ) { return a > b ? a : b; }
 
+#include <vector>
+
 //
 //  saving parameters
 //
@@ -18,6 +20,7 @@ const int SAVEFREQ = 10;
 //
 typedef struct 
 {
+  int binNum;
   double x;
   double y;
   double vx;
@@ -39,6 +42,18 @@ particle_t *newparticle(Quad *q);
 //  timing routines
 //
 double read_timer( );
+
+//
+//  bin block routines
+//
+int get_bin_count();
+void make_bin(int n);
+void clear_bins(int begin, int end);
+void clear_bin(int index);
+void set_bin(particle_t & particle);
+void move_bin(particle_t & particle);
+void apply_force_bin(int binNum, double *dmin, double *davg, int *navg);
+void print_bins();
 
 //
 //  simulation routines

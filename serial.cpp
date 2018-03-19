@@ -7,135 +7,162 @@
 //
 //  benchmarking program
 //
-int main(int argc, char **argv)
-{
-    int navg, nabsavg = 0;
-    double davg, dmin, absmin = 1.0, absavg = 0.0;
+int main( int argc, char **argv )
+{    
+    int navg,nabsavg=0;
+    double davg,dmin, absmin=1.0, absavg=0.0;
 
-    if (find_option(argc, argv, "-h") >= 0)
+    if( find_option( argc, argv, "-h" ) >= 0 )
     {
-        printf("Options:\n");
-        printf("-h to see this help\n");
-        printf("-n <int> to set the number of particles\n");
-        printf("-o <filename> to specify the output file name\n");
-        printf("-s <filename> to specify a summary file name\n");
-        printf("-no turns off all correctness checks and particle output\n");
+        printf( "Options:\n" );
+        printf( "-h to see this help\n" );
+        printf( "-n <int> to set the number of particles\n" );
+        printf( "-o <filename> to specify the output file name\n" );
+        printf( "-s <filename> to specify a summary file name\n" );
+        printf( "-no turns off all correctness checks and particle output\n");
         return 0;
     }
+    
+    int n = read_int( argc, argv, "-n", 1000 );
 
-    int n = read_int(argc, argv, "-n", 1000);
+    char *savename = read_string( argc, argv, "-o", NULL );
+    char *sumname = read_string( argc, argv, "-s", NULL );
+    
+    FILE *fsave = savename ? fopen( savename, "w" ) : NULL;
+    FILE *fsum = sumname ? fopen ( sumname, "a" ) : NULL;
 
-    char *savename = read_string(argc, argv, "-o", NULL);
-    char *sumname = read_string(argc, argv, "-s", NULL);
-
-    FILE *fsave = fopen(savename, "w");
-    FILE *fsum = fopen(sumname, "a");
-
-    particle_t *particles = (particle_t *)malloc(n * sizeof(particle_t));
-    set_size(n);
-    init_particles(n, particles);
-
+    particle_t *particles = (particle_t*) malloc( n * sizeof(particle_t) );
+    set_size( n );
+    init_particles( n, particles );
+    
     //
     //  simulate a number of time steps
     //
-    double simulation_time = read_timer();
+    double simulation_time = read_timer( );
 
-    for (int step = 0; step < NSTEPS; step++)
+    // bin [x-blocks] [y-blocks] [density]
+
+    // Size of one side of a 2D bin square
+    int bin_count = get_bin_count();
+    // bin_t * binArr = make_bin(n);
+    make_bin(n);
+    // int bin[(int)(size/cutoff)][(int)(size/cutoff)][(int)(n/size)];
+
+// #define DEBUG_LA
+#ifdef DEBUG_LA
+    // For visualization
+    char *outname = (char*) malloc(32 * sizeof(char));
+#endif
+
+#ifdef DEBUG_LA
+    // print_bins();
+#endif
+	
+    for( int step = 0; step < NSTEPS; step++ )
     {
-
-        navg = 0;
+	    navg = 0;
         davg = 0.0;
-        dmin = 1.0;
+	    dmin = 1.0;
+
+        // Clear bins out to redo in case of move
+        clear_bins(0,bin_count);
+
+        // Make bins and set particles into bins
+        for(int pCount = 0; pCount < n; pCount++ )
+        {
+            set_bin(particles[pCount]);
+        }
+
         //
         //  compute forces
         //
-        for (int i = 0; i < n; i++)
+        for (int i=0; i < bin_count; i++)
         {
-            particles[i].ax = particles[i].ay = 0;
-            for (int j = 0; j < n; j++)
-                apply_force(particles[i], particles[j], &dmin, &davg, &navg);
+            apply_force_bin(i,&dmin,&davg,&navg);
         }
 
+        /* Original compute forces
+        for( int i = 0; i < n; i++ )
+        {
+            particles[i].ax = particles[i].ay = 0;
+            for (int j = 0; j < n; j++ )
+				apply_force( particles[i], particles[j],&dmin,&davg,&navg);
+        }
+        */
+ 
         //
         //  move particles
         //
-        for (int i = 0; i < n; i++)
-            move(particles[i]);
-
-        if (find_option(argc, argv, "-no") == -1)
+        for( int i = 0; i < n; i++ ) 
         {
-            //printf("find option %d\n",step);
-            //
-            // Computing statistical data
-            //
-            if (navg)
-            {
-                absavg += davg / navg;
-                nabsavg++;
-            }
-            if (dmin < absmin)
-                absmin = dmin;
+            // if (i == 2)
+            // {
+            //     printf("particle 2 p.ax = %f, p.ay = %f\r\n", particles[i].ax, particles[i].ay);
+            // }
+            move( particles[i] );		
+        }
 
-            //
-            //  save if necessary
-            //
-            if (fsave == NULL)
-            {
-                printf("null");
-            }
-            else
-            {
-                printf("not null");
-            }
+        if( find_option( argc, argv, "-no" ) == -1 )
+        {
+          //
+          // Computing statistical data
+          //
+          if (navg) {
+            absavg +=  davg/navg;
+            nabsavg++;
+          }
+          if (dmin < absmin) absmin = dmin;
+		
+          //
+          //  save if necessary
+          //
+          if( fsave && (step%SAVEFREQ) == 0 )
+              save( fsave, n, particles );
 
-            if (fsave != NULL)
-            {
-                printf("curr step1 %d\n", step);
-                if ((step % SAVEFREQ) == 0)
-                {
-                    printf("curr step2 %d\n", step);
-                    save(fsave, n, particles);
-                }
-            }
+#ifdef DEBUG_LA
+          // Output for visualization
+          sprintf( outname, "out/fout-%05d.txt", step );
+          FILE *fout = fopen( outname, "w" );
+          save( fout, n, particles);
+          fclose( fout );
+#endif
         }
     }
-    simulation_time = read_timer() - simulation_time;
+    simulation_time = read_timer( ) - simulation_time;
+    // print_bins();
+    
+    printf( "n = %d, simulation time = %g seconds", n, simulation_time);
 
-    printf("n = %d, simulation time = %g seconds", n, simulation_time);
-
-    if (find_option(argc, argv, "-no") == -1)
+    if( find_option( argc, argv, "-no" ) == -1 )
     {
-        if (nabsavg)
-            absavg /= nabsavg;
-        //
-        //  -the minimum distance absmin between 2 particles during the run of the simulation
-        //  -A Correct simulation will have particles stay at greater than 0.4 (of cutoff) with typical values between .7-.8
-        //  -A simulation were particles don't interact correctly will be less than 0.4 (of cutoff) with typical values between .01-.05
-        //
-        //  -The average distance absavg is ~.95 when most particles are interacting correctly and ~.66 when no particles are interacting
-        //
-        printf(", absmin = %lf, absavg = %lf", absmin, absavg);
-        if (absmin < 0.4)
-            printf("\nThe minimum distance is below 0.4 meaning that some particle is not interacting");
-        if (absavg < 0.8)
-            printf("\nThe average distance is below 0.8 meaning that most particles are not interacting");
+      if (nabsavg) absavg /= nabsavg;
+    // 
+    //  -the minimum distance absmin between 2 particles during the run of the simulation
+    //  -A Correct simulation will have particles stay at greater than 0.4 (of cutoff) with typical values between .7-.8
+    //  -A simulation were particles don't interact correctly will be less than 0.4 (of cutoff) with typical values between .01-.05
+    //
+    //  -The average distance absavg is ~.95 when most particles are interacting correctly and ~.66 when no particles are interacting
+    //
+    printf( ", absmin = %lf, absavg = %lf", absmin, absavg);
+    if (absmin < 0.4) printf ("\nThe minimum distance is below 0.4 meaning that some particle is not interacting");
+    if (absavg < 0.8) printf ("\nThe average distance is below 0.8 meaning that most particles are not interacting");
     }
-    printf("\n");
+    printf("\n");     
 
     //
     // Printing summary data
     //
-    if (fsum)
-        fprintf(fsum, "%d %g\n", n, simulation_time);
-
+    if( fsum) 
+        fprintf(fsum,"%d %g\n",n,simulation_time);
+ 
     //
     // Clearing space
     //
-    if (fsum)
-        fclose(fsum);
-    free(particles);
-    if (fsave)
-        fclose(fsave);
-
+    if( fsum )
+        fclose( fsum );    
+    free( particles );
+    if( fsave )
+        fclose( fsave );
+    
     return 0;
 }
