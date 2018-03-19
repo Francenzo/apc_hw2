@@ -99,7 +99,7 @@ int main( int argc, char **argv )
             // {
             //     printf("particle 2 p.ax = %f, p.ay = %f\r\n", particles[i].ax, particles[i].ay);
             // }
-            move( particles[i] );		
+            move(particles[i]);		
         }
 
         if( find_option( argc, argv, "-no" ) == -1 )

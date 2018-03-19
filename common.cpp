@@ -125,7 +125,7 @@ void init_particles(int n, particle_t *p)
         p[i].vx = drand48() * 2 - 1;
         p[i].vy = drand48() * 2 - 1;
 
-        printf("init %f %f\n", p[i].x, p[i].y);
+        //printf("init %f %f\n", p[i].x, p[i].y);
     }
     free(shuffle);
 }
@@ -338,7 +338,7 @@ void move_mpi(particle_t &p, double size)
 //
 //  integrate the ODE
 //
-void move( particle_t &p )
+void move(particle_t &p)
 {
     //
     //  slightly simplified Velocity Verlet integration

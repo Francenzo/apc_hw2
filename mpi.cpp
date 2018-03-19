@@ -11,10 +11,10 @@
 //
 int main(int argc, char **argv)
 {
-    int navg, nabsavg = 0;
-    double dmin, absmin = 1.0, davg, absavg = 0.0;
-    double rdavg, rdmin;
-    int rnavg;
+    //int navg, nabsavg = 0;
+    //double dmin, absmin = 1.0, davg, absavg = 0.0;
+    //double rdavg, rdmin;
+    //int rnavg;
 
     //
     //  process command line parameters
@@ -138,9 +138,9 @@ int main(int argc, char **argv)
     double simulation_time = read_timer();
     for (int step = 0; step < NSTEPS; step++)
     {
-        navg = 0;
-        dmin = 1.0;
-        davg = 0.0;
+        //navg = 0;
+        //dmin = 1.0;
+        //davg = 0.0;
 
         //1 get speecific local elements
         //MPI_Allgatherv(local, nlocal, PARTICLE, particles, partition_sizes, partition_offsets, PARTICLE, MPI_COMM_WORLD);
@@ -277,8 +277,8 @@ int main(int argc, char **argv)
 
         if (find_option(argc, argv, "-no") == -1)
         {
-            if (nabsavg)
-                absavg /= nabsavg;
+            //if (nabsavg)
+            //    absavg /= nabsavg;
             //
             //  -the minimum distance absmin between 2 particles during the run of the simulation
             //  -A Correct simulation will have particles stay at greater than 0.4 (of cutoff) with typical values between .7-.8
@@ -286,11 +286,11 @@ int main(int argc, char **argv)
             //
             //  -The average distance absavg is ~.95 when most particles are interacting correctly and ~.66 when no particles are interacting
             //
-            printf(", absmin = %lf, absavg = %lf", absmin, absavg);
-            if (absmin < 0.4)
-                printf("\nThe minimum distance is below 0.4 meaning that some particle is not interacting");
-            if (absavg < 0.8)
-                printf("\nThe average distance is below 0.8 meaning that most particles are not interacting");
+            //printf(", absmin = %lf, absavg = %lf", absmin, absavg);
+            //if (absmin < 0.4)
+            //    printf("\nThe minimum distance is below 0.4 meaning that some particle is not interacting");
+            //if (absavg < 0.8)
+            //    printf("\nThe average distance is below 0.8 meaning that most particles are not interacting");
         }
         printf("\n");
 
