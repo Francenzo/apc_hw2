@@ -135,6 +135,10 @@ int main(int argc, char **argv)
     //
     //  simulate a number of time steps
     //
+    //  Output for visualization
+#ifdef DEBUG_MPI  
+    char outname [100];
+#endif
     double simulation_time = read_timer();
     for (int step = 0; step < NSTEPS; step++)
     {
@@ -144,13 +148,7 @@ int main(int argc, char **argv)
 
         //1 get speecific local elements
         //MPI_Allgatherv(local, nlocal, PARTICLE, particles, partition_sizes, partition_offsets, PARTICLE, MPI_COMM_WORLD);
-        if (find_option(argc, argv, "-no") == -1)
-        {
-            if (fsave && (step % SAVEFREQ) == 0)
-            {
-                save(fsave, n, particles);
-            }
-        }
+
 
         //2 build tree (tree should be buit for every iteration)
 
@@ -165,11 +163,31 @@ int main(int argc, char **argv)
             }
         }
 
+
+        //printf("rank %d step %d insert ok\n",rank, step);
+
+        //printf("debug rank %d step %d, insert ok\n",rank,step);
+
         //get root node from other partition
         //printf("threadid %d %f %f\n", rank, bhtree->particle->x, bhtree->particle->y);
         //attention, recieve number of recieve value is 1
+        if(bhtree->particle==NULL){
+            //insert a psudo node
+            particle_t*p=new(particle_t);
+            p->x=initq->llx;
+            p->y=initq->lly;
+            bhtree->particle=p;
+        }
+        
+        //printf("rank %d step %d parx %f pary %f alltogether start\n",rank, step, bhtree->particle->x,bhtree->particle->y);
         MPI_Allgather(bhtree->particle, 1, PARTICLE, allroot, 1, PARTICLE, MPI_COMM_WORLD);
 
+        
+        //MPI_Barrier(MPI_COMM_WORLD);
+
+        //printf("rank %d step %d alltogether ok\n",rank, step);
+       
+        //printf("thread %d step %d all together ok\n",rank,step);
         //3 compute force (for the particle in other mpi thread, use root value to take place )
         //an array is needed to store all the root value from other mpi thread
         //compute the force in local tree
@@ -185,6 +203,10 @@ int main(int argc, char **argv)
                 }
             }
         }
+
+        //printf("rank %d step %d force caculation ok\n",rank, step);
+
+        // printf("debug rank %d step %d, apply force ok\n",rank, step);
 
         //printf("rank %d applyforce ok\n", rank);
         //compute the force from the other mpi thread
@@ -260,13 +282,31 @@ int main(int argc, char **argv)
         {
             //for n=2 and n=8 the region is not squre, consider this
             //printf("index %d x %f y %f ax %f ay %f\n", i, local[i].x, local[i].y, local[i].ax, local[i].ay);
-            move_mpi(local[i], localsize * n_proc);
+            move_mpi(step, local[i], localsize * n_proc);
         }
+
+        //printf("debug rank %d step %d, move mpi ok\n",rank, step);
 
         //if (rank == 0)
         //{
         //    printf("index %d\n", step);
         //}
+        if (find_option(argc, argv, "-no") == -1)
+        {
+            if (fsave && (step % SAVEFREQ) == 0)
+            {
+                save(fsave, nlocal, local);
+            }
+        }
+
+#ifdef DEBUG_MPI
+    // For visualization
+    sprintf(outname, "out/fout-rank%d-%05d.txt", rank, step );
+    FILE *fout = fopen( outname, "w" );
+    save( fout, nlocal, local);
+    fclose( fout );
+#endif
+        //printf("rank %d step %d finish\n",rank, step);
     }
 
     simulation_time = read_timer() - simulation_time;

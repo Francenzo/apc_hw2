@@ -3,8 +3,8 @@
 #include "stdio.h"
 #include "iostream"
 #include <queue>
-#include <math.h>
-#define cutoff 0.01
+#include <cmath>
+#define cutoff 0.06
 #define min_r (cutoff / 100)
 #define mass 0.01
 
@@ -208,25 +208,44 @@ void printBT(BHTreeNode *bnode, queue<BHTreeNode *> &q)
 //compute the force that particleb give particlea
 void applyForceTwoParticle(particle_t *particlea, particle_t *particleb)
 {
+
+    if(particleb==NULL){
+        return;
+    }
+    /*
+    double dx = neighbor.x - particle.x;
+    double dy = neighbor.y - particle.y;
+    double r2 = dx * dx + dy * dy;
+    if (r2 > cutoff * cutoff)
+        return;
+
+
+    */
     double dx = particleb->x - particlea->x;
     double dy = particleb->y - particlea->y;
     double r2 = dx * dx + dy * dy;
 
     r2 = fmax(r2, min_r * min_r);
 
-    if (r2 > cutoff * cutoff)
-    {
+    //if (r2 > cutoff * cutoff)
+    //{
         //do not compute the under branch
-        return;
-    }
+    //    return;
+    //}
+
+    //printf("less than cutoff r2 %f\n",)
     double r = sqrt(r2);
 
     //
     //  very simple short-range repulsive force
     //
     double coef = (1 - cutoff / r) / r2 / mass;
+
+    
     particlea->ax += coef * dx;
     particlea->ay += coef * dy;
+
+    //printf("coef %f ax %f ay %f\n",coef,particlea->ax,particlea->ay);
 }
 
 
@@ -236,13 +255,21 @@ void applyForceTree(particle_t *particle, BHTreeNode *bht)
     double dx = curr->quad->llx - particle->x;
     double dy = curr->quad->lly - particle->y;
     double r2 = dx * dx + dy * dy;
-    if (r2 > cutoff * cutoff)
+
+    //printf("apply force r2 %f cutoff %f\n",r2,cutoff * cutoff);
+    if (r2 > (cutoff * cutoff))
     {
-        //do not compute the under branch
+        //do not iterate to the following layers
+        if(curr->particle!=NULL){
+            applyForceTwoParticle(particle, curr->particle);
+        }
+      
+        //printf("approximation caculation pxa %f pya %f\n",particle->ax,particle->ay);
         return;
     }
     else
     {
+        //printf("smaller than cuttoff\n");
 
         r2 = fmax(r2, min_r * min_r);
         double r = sqrt(r2);
@@ -272,6 +299,8 @@ void applyForceTree(particle_t *particle, BHTreeNode *bht)
             applyForceTree(particle, curr->SW);
         }
     }
+
+    //printf("final ax %f ay %f\n",particle->ax,particle->ay);
 }
 
 void BHTfree(BHTreeNode *bht)

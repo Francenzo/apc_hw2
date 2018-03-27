@@ -289,7 +289,7 @@ void apply_force(particle_t &particle, particle_t &neighbor, double *dmin, doubl
         (*davg) += sqrt(r2) / cutoff;
         (*navg)++;
     }
-
+    
     r2 = fmax(r2, min_r * min_r);
     double r = sqrt(r2);
 
@@ -304,13 +304,12 @@ void apply_force(particle_t &particle, particle_t &neighbor, double *dmin, doubl
 //
 //  integrate the ODE
 //
-void move_mpi(particle_t &p, double size)
+void move_mpi(int step,particle_t &p, double size)
 {
     //
     //  slightly simplified Velocity Verlet integration
     //  conserves energy better than explicit Euler method
     //
-    
     if (p.ax == 0 && p.ay == 0)
     {
         return;
@@ -319,7 +318,6 @@ void move_mpi(particle_t &p, double size)
     p.vy += p.ay * dt;
     p.x += p.vx * dt;
     p.y += p.vy * dt;
-
     //
     //  bounce from walls
     //
