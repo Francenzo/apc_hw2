@@ -222,6 +222,43 @@ void apply_force_bin(int binNum, double *dmin, double *davg, int *navg)
 }
 
 //
+// Apply force to all particles in current bin
+// Include surrounding bins to address cutoff
+//
+void apply_force_particle_bin(particle_t &particle, double *dmin, double *davg, int *navg)
+{
+    int binNum = particle.binNum;
+    // All surrounding bins in a 3x3 square
+    int binsToCheck[] = {   binNum - block_row_count - 1,
+                            binNum - block_row_count,
+                            binNum - block_row_count + 1,
+                            binNum - 1,
+                            binNum,
+                            binNum + 1,
+                            binNum + block_row_count - 1,
+                            binNum + block_row_count,
+                            binNum + block_row_count + 1
+                        };
+
+    // Set acceleration of particle to 0
+    particle.ax = particle.ay = 0;
+
+    // Address each bin fully before moving to next
+    for (int i = 0; i < 9; i++)
+    {
+        int compareBinNum = binsToCheck[i];
+        if (compareBinNum >= 0 && compareBinNum < block_row_count*block_row_count)
+        {
+            vector<particle_t*> compare_bin = binVec.at(compareBinNum);
+            for (int j = 0; j < compare_bin.size(); j++)
+            {
+                apply_force(particle, *compare_bin.at(j),dmin,davg,navg);
+            }
+        }
+    }
+}
+
+//
 // Print all sizes of bins
 // Debug function
 //
