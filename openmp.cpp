@@ -56,12 +56,6 @@ int main( int argc, char **argv )
     {
     num_threads = omp_get_num_threads();
     int thread_id = omp_get_thread_num();
-    // Index start of bins for this thread
-    // int thread_start = (bin_count+1)/num_threads*thread_id;
-    // Index end of bins for this thread
-    // Max function added to account for odd # of bins
-    // int thread_end = min((bin_count+1)/num_threads*(thread_id+1), bin_count);
-    // printf("This thread num = %i, start = %i, end = %i\r\n", thread_id, thread_start, thread_end);
     for( int step = 0; step < 1000; step++ )
     {
         navg = 0;
@@ -71,16 +65,11 @@ int main( int argc, char **argv )
         //  compute all forces
         //
         // Clear bins out to redo in case of move
-        // clear_bins(thread_start, thread_end);
         #pragma omp for
         for( int i = 0; i < bin_count; i++ ) 
             clear_bin(i);
 
-        // #pragma omp barrier
-
-
         // Make bins and set particles into bins
-        // #pragma omp for
         #pragma omp master
         for(int pCount = 0; pCount < n; pCount++ )
         {
@@ -88,33 +77,17 @@ int main( int argc, char **argv )
         }
 
         #pragma omp barrier
+
         // printf("Computing forces... step: %i\r\n", step);
         //
         //  compute forces
         //
-        // #pragma omp for reduction (+:navg) reduction(+:davg)
-        // #pragma omp for reduction (+:navg) reduction(+:davg)
-        // for (int i=0; i < bin_count; i++)
-        // {
-        //     testCount++;
-        //     apply_force_bin(i,&dmin,&davg,&navg);
-        // }
-
         #pragma omp for reduction (+:navg) reduction(+:davg)
         for (int i=0; i < n; i++)
         {
             apply_force_particle_bin(particles[i],&dmin,&davg,&navg);
         }
 
-        /*
-        #pragma omp for reduction (+:navg) reduction(+:davg)
-        for( int i = 0; i < n; i++ )
-        {
-            particles[i].ax = particles[i].ay = 0;
-            for (int j = 0; j < n; j++ )
-                apply_force( particles[i], particles[j],&dmin,&davg,&navg);
-        }
-        */
         #pragma omp barrier
 		
         //

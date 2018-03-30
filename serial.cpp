@@ -40,13 +40,9 @@ int main( int argc, char **argv )
     //
     double simulation_time = read_timer( );
 
-    // bin [x-blocks] [y-blocks] [density]
-
     // Size of one side of a 2D bin square
     int bin_count = get_bin_count();
-    // bin_t * binArr = make_bin(n);
     make_bin(n);
-    // int bin[(int)(size/cutoff)][(int)(size/cutoff)][(int)(n/size)];
 
 // #define DEBUG_LA
 #ifdef DEBUG_LA
@@ -94,13 +90,7 @@ int main( int argc, char **argv )
         //  move particles
         //
         for( int i = 0; i < n; i++ ) 
-        {
-            // if (i == 2)
-            // {
-            //     printf("particle 2 p.ax = %f, p.ay = %f\r\n", particles[i].ax, particles[i].ay);
-            // }
-            move(particles[i]);		
-        }
+            move(particles[i]);
 
         if( find_option( argc, argv, "-no" ) == -1 )
         {
@@ -129,7 +119,6 @@ int main( int argc, char **argv )
         }
     }
     simulation_time = read_timer( ) - simulation_time;
-    // print_bins();
     
     printf( "n = %d, simulation time = %g seconds", n, simulation_time);
 

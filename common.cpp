@@ -192,29 +192,6 @@ void set_bin(particle_t & particle)
 }
 
 //
-// Move particle into new bin
-//
-void move_bin(particle_t & particle) 
-{
-    vector<particle_t*> bin = binVec.at(particle.binNum);
-
-    // Look for particle in bin and remove it before transfer
-    for(int iCount = 0; iCount < bin.size(); iCount++)
-    {
-        if ((&particle) == bin.at(iCount))
-        {
-            bin.erase(bin.begin()+iCount);
-            set_bin(particle);
-            return;
-        }
-    }
-
-    printf("Error: Could not find particle in bin.\r\n");
-    exit(-1);
-
-}
-
-//
 // Apply force to all particles in current bin
 // Include surrounding bins to address cutoff
 //
@@ -244,6 +221,7 @@ void apply_force_bin(int binNum, double *dmin, double *davg, int *navg)
     for (int i = 0; i < 9; i++)
     {
         int compareBinNum = binsToCheck[i];
+        // Make sure bin is not outside array limits
         if (compareBinNum >= 0 && compareBinNum < block_row_count*block_row_count)
         {
             vector<particle_t*> compare_bin = binVec.at(compareBinNum);
@@ -259,7 +237,7 @@ void apply_force_bin(int binNum, double *dmin, double *davg, int *navg)
 }
 
 //
-// Apply force to all particles in current bin
+// Apply force to specific particle
 // Include surrounding bins to address cutoff
 //
 void apply_force_particle_bin(particle_t &particle, double *dmin, double *davg, int *navg)
@@ -284,6 +262,7 @@ void apply_force_particle_bin(particle_t &particle, double *dmin, double *davg, 
     for (int i = 0; i < 9; i++)
     {
         int compareBinNum = binsToCheck[i];
+        // Make sure bin is not outside array limits
         if (compareBinNum >= 0 && compareBinNum < block_row_count*block_row_count)
         {
             vector<particle_t*> compare_bin = binVec.at(compareBinNum);
