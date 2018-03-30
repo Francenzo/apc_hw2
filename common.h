@@ -53,6 +53,7 @@ void clear_bin(int index);
 void set_bin(particle_t & particle);
 void move_bin(particle_t & particle);
 void apply_force_bin(int binNum, double *dmin, double *davg, int *navg);
+void apply_force_particle_bin(particle_t &particle, double *dmin, double *davg, int *navg);
 void print_bins();
 
 //

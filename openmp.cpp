@@ -52,10 +52,10 @@ int main( int argc, char **argv )
     make_bin(n);
     clear_bins(0, bin_count);
 
-    // #pragma omp parallel private(dmin) 
-    // {
-    // num_threads = omp_get_num_threads();
-    // int thread_id = omp_get_thread_num();
+    #pragma omp parallel private(dmin) 
+    {
+    num_threads = omp_get_num_threads();
+    int thread_id = omp_get_thread_num();
     // Index start of bins for this thread
     // int thread_start = (bin_count+1)/num_threads*thread_id;
     // Index end of bins for this thread
@@ -80,23 +80,30 @@ int main( int argc, char **argv )
 
 
         // Make bins and set particles into bins
-        // #pragma omp master
-        #pragma omp for
+        // #pragma omp for
+        #pragma omp master
         for(int pCount = 0; pCount < n; pCount++ )
         {
             set_bin(particles[pCount]);
         }
 
-        // #pragma omp barrier
+        #pragma omp barrier
         // printf("Computing forces... step: %i\r\n", step);
         //
         //  compute forces
         //
         // #pragma omp for reduction (+:navg) reduction(+:davg)
-        #pragma omp for
-        for (int i=0; i < bin_count; i++)
+        // #pragma omp for reduction (+:navg) reduction(+:davg)
+        // for (int i=0; i < bin_count; i++)
+        // {
+        //     testCount++;
+        //     apply_force_bin(i,&dmin,&davg,&navg);
+        // }
+
+        #pragma omp for reduction (+:navg) reduction(+:davg)
+        for (int i=0; i < n; i++)
         {
-            apply_force_bin(i,&dmin,&davg,&navg);
+            apply_force_particle_bin(particles[i],&dmin,&davg,&navg);
         }
 
         /*
@@ -108,7 +115,7 @@ int main( int argc, char **argv )
                 apply_force( particles[i], particles[j],&dmin,&davg,&navg);
         }
         */
-        
+        #pragma omp barrier
 		
         //
         //  move particles
@@ -116,6 +123,7 @@ int main( int argc, char **argv )
         #pragma omp for
         for( int i = 0; i < n; i++ ) 
             move( particles[i] );
+
   
         if( find_option( argc, argv, "-no" ) == -1 ) 
         {
@@ -149,7 +157,7 @@ int main( int argc, char **argv )
           fclose( fout );
           }
 #endif
-    // }
+    }
     }
     simulation_time = read_timer( ) - simulation_time;
     
